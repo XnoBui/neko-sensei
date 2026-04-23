@@ -13,9 +13,25 @@ const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 let elevenDisabled = false;
 let currentAudio: HTMLAudioElement | null = null;
+// Monotonic generation — every speakJa call bumps it. Any async callback
+// from an older call checks the gen it captured and bails if it's stale,
+// so a slow error event can't trigger browserSpeak over a newer audio.
+let speakGen = 0;
 
 function ttsUrl(text: string): string {
   return `${BASE_PATH}/api/tts?text=${encodeURIComponent(text)}`;
+}
+
+function stopEverything() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.src = "";
+    currentAudio.load();
+    currentAudio = null;
+  }
+  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
 }
 
 function browserSpeak(text: string) {
@@ -32,8 +48,7 @@ function browserSpeak(text: string) {
 }
 
 // Warm both the server cache and the browser HTTP cache so the first tap
-// plays instantly. Safe to call on card render — skipped once we've
-// learned the endpoint is disabled (no API key).
+// plays instantly. Safe (and recommended) to call on card render.
 export async function prefetchJa(text: string) {
   if (!text || typeof window === "undefined" || elevenDisabled) return;
   try {
@@ -47,13 +62,8 @@ export async function prefetchJa(text: string) {
 export function speakJa(text: string) {
   if (!text || typeof window === "undefined") return;
 
-  // Stop any in-flight playback first
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.currentTime = 0;
-    currentAudio = null;
-  }
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  stopEverything();
+  const myGen = ++speakGen;
 
   if (elevenDisabled) {
     browserSpeak(text);
@@ -69,13 +79,16 @@ export function speakJa(text: string) {
   audio.addEventListener(
     "error",
     () => {
+      // If a newer speakJa has since started, don't speak over it.
+      if (myGen !== speakGen) return;
       const err = audio.error;
       if (
         err &&
         (err.code === MediaError.MEDIA_ERR_NETWORK ||
           err.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED)
       ) {
-        // TTS endpoint returned JSON/error instead of MP3 — likely no API key.
+        // Likely no API key configured — fall through to browser TTS
+        // for the rest of the session instead of retrying the endpoint.
         elevenDisabled = true;
       }
       browserSpeak(text);
@@ -86,7 +99,7 @@ export function speakJa(text: string) {
   const p = audio.play();
   if (p && typeof p.catch === "function") {
     p.catch(() => {
-      // Rare: autoplay still refused (e.g. user hasn't interacted with page at all).
+      if (myGen !== speakGen) return;
       browserSpeak(text);
     });
   }

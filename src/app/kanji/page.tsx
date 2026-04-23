@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { kanji, type KanjiItem } from "@/data/kanji";
-import { speakJa } from "@/lib/speak";
+import { prefetchJa, speakJa } from "@/lib/speak";
 import {
   buildQueue,
   computeStats,
@@ -65,6 +65,17 @@ export default function KanjiPage() {
   const currentId = queue[0];
   const card = currentId ? byId.get(currentId) : undefined;
   const cardState = currentId ? deck[currentId] : undefined;
+
+  // Warm audio for the current card + the next one so the Play tap is instant.
+  // Kanji audio uses the first example word (same phrase the Play button speaks).
+  useEffect(() => {
+    const phrase = card?.examples[0]?.word ?? card?.kanji;
+    if (phrase) prefetchJa(phrase);
+    const nextId = queue[1];
+    const nextCard = nextId ? byId.get(nextId) : undefined;
+    const nextPhrase = nextCard?.examples[0]?.word ?? nextCard?.kanji;
+    if (nextPhrase) prefetchJa(nextPhrase);
+  }, [card, queue, byId]);
 
   function review(result: SrsResult) {
     if (!currentId) return;

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { vocab, type VocabItem } from "@/data/vocab";
-import { speakJa } from "@/lib/speak";
+import { prefetchJa, speakJa } from "@/lib/speak";
 import {
   buildQueue,
   computeStats,
@@ -78,6 +78,14 @@ export default function VocabPage() {
   const currentId = queue[0];
   const card = currentId ? byId.get(currentId) : undefined;
   const cardState = currentId ? deck[currentId] : undefined;
+
+  // Warm audio for the current card + the next one, so the Play button is instant.
+  useEffect(() => {
+    if (card?.word) prefetchJa(card.word);
+    const nextId = queue[1];
+    const nextCard = nextId ? byId.get(nextId) : undefined;
+    if (nextCard?.word) prefetchJa(nextCard.word);
+  }, [card, queue, byId]);
 
   function review(result: SrsResult) {
     if (!currentId) return;
