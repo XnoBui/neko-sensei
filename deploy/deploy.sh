@@ -26,10 +26,13 @@ rsync -az --delete \
 echo "▶ Installing deps + building on VPS…"
 ssh "${VPS_USER}@${VPS_IP}" "cd ${REMOTE_DIR} && npm ci --omit=dev=false && NEXT_PUBLIC_BASE_PATH=/neko-sensei npm run build"
 
-RESTART_CMD="ssh -t ${VPS_USER}@${VPS_IP} 'sudo systemctl restart ${SERVICE}'"
+echo "▶ Restarting systemd service…"
+if ssh "${VPS_USER}@${VPS_IP}" "sudo -n systemctl restart ${SERVICE}" 2>/dev/null; then
+  echo "✓ Service restarted"
+else
+  echo "⚠ Passwordless sudo not set up — run this in your terminal:"
+  echo "    ssh -t ${VPS_USER}@${VPS_IP} 'sudo systemctl restart ${SERVICE}'"
+fi
 
 echo ""
 echo "✓ Deployed → http://${VPS_IP}/neko-sensei/"
-echo ""
-echo "⚠ Run this in your terminal to restart the service (needs sudo password):"
-echo "    ${RESTART_CMD}"
