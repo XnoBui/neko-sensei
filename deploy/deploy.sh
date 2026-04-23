@@ -7,7 +7,7 @@ set -euo pipefail
 
 VPS_USER="xno"
 VPS_IP="89.167.23.147"
-REMOTE_DIR="/opt/neko-sensei"
+REMOTE_DIR="/home/xno/neko-sensei"
 SERVICE="neko-sensei.service"
 
 cd "$(dirname "$0")/.."

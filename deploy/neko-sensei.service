@@ -3,8 +3,8 @@ Description=Neko Sensei (Next.js)
 After=network.target
 
 [Service]
-WorkingDirectory=/opt/neko-sensei
-EnvironmentFile=-/opt/neko-sensei/.env.local
+WorkingDirectory=/home/xno/neko-sensei
+EnvironmentFile=-/home/xno/neko-sensei/.env.local
 Environment=NODE_ENV=production
 Environment=PORT=3500
 Environment=HOSTNAME=127.0.0.1

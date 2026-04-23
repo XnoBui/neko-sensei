@@ -4,11 +4,11 @@
 # Installs systemd unit + nginx location block + starts the service.
 #
 # Usage (from your laptop):
-#   ssh -t xno@89.167.23.147 "sudo bash /opt/neko-sensei/deploy/install.sh"
+#   ssh -t xno@89.167.23.147 "sudo bash /home/xno/neko-sensei/deploy/install.sh"
 # ─────────────────────────────────────────────
 set -euo pipefail
 
-APP_DIR="/opt/neko-sensei"
+APP_DIR="/home/xno/neko-sensei"
 UNIT_SRC="${APP_DIR}/deploy/neko-sensei.service"
 NGINX_SNIPPET="${APP_DIR}/deploy/neko-sensei.nginx"
 NGINX_SITE="/etc/nginx/sites-enabled/default-server"
