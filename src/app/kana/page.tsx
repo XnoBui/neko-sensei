@@ -23,7 +23,7 @@ import {
   type KanaCharStats,
   type KanaStats,
 } from "@/lib/progress";
-import { speakJa } from "@/lib/speak";
+import { prefetchJa, speakJa } from "@/lib/speak";
 
 type Script = "hiragana" | "katakana" | "kanji";
 
@@ -140,6 +140,12 @@ function DrillOverlay({
   useEffect(() => {
     setStatsState(getKanaStats(script));
   }, [script]);
+
+  // Pre-fetch the current character's audio as soon as it appears, so the
+  // click-to-hear feedback feels instant.
+  useEffect(() => {
+    if (current?.kana) prefetchJa(current.kana);
+  }, [current]);
 
   const accuracy = useMemo(() => {
     const total = stats.correct + stats.wrong;

@@ -61,6 +61,16 @@ async function fetchTts(text: string): Promise<string | null> {
   }
 }
 
+// Warm the cache without playing. Call this when a character is rendered so
+// the audio is already local by the time the user triggers playback.
+export async function prefetchJa(text: string) {
+  if (!text || typeof window === "undefined") return;
+  if (elevenDisabled) return;
+  if (urlCacheGet(text)) return;
+  const url = await fetchTts(text);
+  if (url) urlCacheSet(text, url);
+}
+
 export async function speakJa(text: string) {
   if (!text) return;
   if (typeof window === "undefined") return;

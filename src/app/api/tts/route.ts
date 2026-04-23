@@ -2,10 +2,10 @@ import { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
 
-// default: Japanese-friendly voice. Override with ELEVENLABS_VOICE_ID.
-// 21m00Tcm4TlvDq8ikWAM = "Rachel" (multilingual v2 handles Japanese)
-const DEFAULT_VOICE = "21m00Tcm4TlvDq8ikWAM";
-const DEFAULT_MODEL = "eleven_multilingual_v2";
+// Native Japanese voice "Kana" from the shared library — best fit for a kana-drill app.
+const DEFAULT_VOICE = "dhGvgIx0X6G3xzSWqOye";
+// Flash v2.5: ~75ms generation, warms under 500ms end-to-end. Japanese supported.
+const DEFAULT_MODEL = "eleven_flash_v2_5";
 
 // simple in-memory cache so repeat drills don't re-hit the API.
 // key = `${voice}:${model}:${text}`; value = MP3 bytes.
@@ -65,7 +65,8 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`;
+  // Use the streaming endpoint so audio arrives as chunks (lower perceived latency).
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/stream?optimize_streaming_latency=3`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -77,9 +78,9 @@ export async function POST(req: NextRequest) {
       text,
       model_id: model,
       voice_settings: {
-        stability: 0.45,
-        similarity_boost: 0.8,
-        style: 0.2,
+        stability: 0.5,
+        similarity_boost: 0.75,
+        style: 0.0,
         use_speaker_boost: true,
       },
     }),
