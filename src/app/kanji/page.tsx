@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { vocab, type VocabItem } from "@/data/vocab";
+import { kanji, type KanjiItem } from "@/data/kanji";
 import { speakJa } from "@/lib/speak";
 import {
   buildQueue,
@@ -15,63 +15,50 @@ import {
   type SrsStats,
 } from "@/lib/srs";
 
-const DECK_KEY = "vocab";
+const DECK_KEY = "kanji";
 
-const categories: Array<VocabItem["category"] | "all"> = [
+const categories: Array<KanjiItem["category"] | "all"> = [
   "all",
-  "greetings",
-  "people",
-  "family",
-  "food",
   "numbers",
-  "counters",
   "time",
-  "days",
-  "months",
-  "places",
-  "transport",
+  "people",
   "directions",
-  "verbs",
-  "adjectives",
-  "colors",
   "body",
-  "weather",
   "nature",
-  "animals",
-  "objects",
-  "school",
-  "questions",
+  "verbs",
+  "descriptive",
+  "things",
 ];
 
-export default function VocabPage() {
+export default function KanjiPage() {
   const [category, setCategory] = useState<(typeof categories)[number]>("all");
   const [flipped, setFlipped] = useState(false);
   const [deck, setDeck] = useState<SrsDeck>({});
   const [queue, setQueue] = useState<string[]>([]);
 
   const filtered = useMemo(
-    () => (category === "all" ? vocab : vocab.filter((v) => v.category === category)),
+    () => (category === "all" ? kanji : kanji.filter((k) => k.category === category)),
     [category],
   );
   const byId = useMemo(() => {
-    const m = new Map<string, VocabItem>();
-    for (const v of vocab) m.set(v.word, v);
+    const m = new Map<string, KanjiItem>();
+    for (const k of kanji) m.set(k.kanji, k);
     return m;
   }, []);
 
   useEffect(() => {
     const d = getDeck(DECK_KEY);
     setDeck(d);
-    setQueue(buildQueue(d, filtered.map((v) => v.word), { newPerSession: 15 }));
+    setQueue(buildQueue(d, filtered.map((k) => k.kanji), { newPerSession: 8 }));
     setFlipped(false);
   }, [filtered]);
 
   const stats: SrsStats = useMemo(
-    () => computeStats(deck, vocab.map((v) => v.word)),
+    () => computeStats(deck, kanji.map((k) => k.kanji)),
     [deck],
   );
   const filteredStats: SrsStats = useMemo(
-    () => computeStats(deck, filtered.map((v) => v.word)),
+    () => computeStats(deck, filtered.map((k) => k.kanji)),
     [deck, filtered],
   );
 
@@ -85,7 +72,7 @@ export default function VocabPage() {
     setDeck(next);
     const remaining = queue.slice(1);
     if (remaining.length === 0) {
-      setQueue(buildQueue(next, filtered.map((v) => v.word), { newPerSession: 15 }));
+      setQueue(buildQueue(next, filtered.map((k) => k.kanji), { newPerSession: 8 }));
     } else {
       setQueue(remaining);
     }
@@ -95,11 +82,11 @@ export default function VocabPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="ios-title text-ios-label">Vocab Flashcards</h1>
+        <h1 className="ios-title text-ios-label">Kanji Study</h1>
         <div className="text-xs text-ios-label3 flex gap-3 flex-wrap">
           <span><span className="font-semibold text-ios-blue">{filteredStats.due}</span> due</span>
           <span><span className="font-semibold text-ios-orange">{filteredStats.learning}</span> learning</span>
-          <span><span className="font-semibold text-ios-green">{stats.known}</span>/{vocab.length} known</span>
+          <span><span className="font-semibold text-ios-green">{stats.known}</span>/{kanji.length} known</span>
           <span><span className="font-semibold text-ios-label2">{filteredStats.newLeft}</span> new</span>
         </div>
       </div>
@@ -116,19 +103,51 @@ export default function VocabPage() {
         <>
           <div
             onClick={() => setFlipped((f) => !f)}
-            className="card relative cursor-pointer select-none min-h-[300px] flex flex-col items-center justify-center text-center py-10"
+            className="card relative cursor-pointer select-none min-h-[360px] flex flex-col items-center justify-center text-center py-10"
           >
             {!flipped ? (
               <>
-                <div className="jp-big text-ios-label">{card.word}</div>
-                <p className="mt-5 text-ios-label3 text-sm">Tap to reveal meaning</p>
+                <div className="font-jp text-ios-label" style={{ fontSize: "9rem", lineHeight: 1 }}>
+                  {card.kanji}
+                </div>
+                <div className="mt-3 text-xs text-ios-label3">{card.strokes} strokes</div>
+                <p className="mt-4 text-ios-label3 text-sm">Tap to reveal reading & meaning</p>
               </>
             ) : (
-              <>
-                <div className="text-2xl font-semibold tracking-tight text-ios-label mb-2">{card.meaning}</div>
-                <div className="font-jp text-3xl text-ios-label">{card.word}</div>
-                <div className="text-ios-label3 mt-1 text-sm">{card.reading}</div>
-              </>
+              <div className="w-full max-w-md space-y-4">
+                <div className="font-jp text-7xl text-ios-label">{card.kanji}</div>
+                <div className="text-2xl font-semibold tracking-tight text-ios-label">{card.meaning}</div>
+                <div className="grid grid-cols-2 gap-3 text-left text-sm">
+                  <div className="card !p-3 !shadow-none bg-white/60">
+                    <div className="text-[11px] uppercase tracking-wide text-ios-label3 mb-1">On'yomi</div>
+                    <div className="text-ios-label">
+                      {card.onyomi.length ? card.onyomi.join(" ・ ") : "—"}
+                    </div>
+                  </div>
+                  <div className="card !p-3 !shadow-none bg-white/60">
+                    <div className="text-[11px] uppercase tracking-wide text-ios-label3 mb-1">Kun'yomi</div>
+                    <div className="text-ios-label">
+                      {card.kunyomi.length ? card.kunyomi.join(" ・ ") : "—"}
+                    </div>
+                  </div>
+                </div>
+                {card.examples.length > 0 && (
+                  <div className="text-left">
+                    <div className="text-[11px] uppercase tracking-wide text-ios-label3 mb-1">Examples</div>
+                    <ul className="space-y-1.5">
+                      {card.examples.map((ex) => (
+                        <li key={ex.word} className="flex items-baseline justify-between gap-3">
+                          <span className="font-jp text-ios-label">{ex.word}</span>
+                          <span className="text-ios-label2 text-xs">{ex.reading}</span>
+                          <span className="text-ios-label3 text-xs flex-1 text-right truncate">
+                            {ex.meaning}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             )}
             <div className="absolute top-3 left-3 text-[11px] text-ios-label3">
               {cardState
@@ -138,10 +157,11 @@ export default function VocabPage() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                speakJa(card.word);
+                const phrase = card.examples[0]?.word ?? card.kanji;
+                speakJa(phrase);
               }}
               className="absolute top-3 right-3 btn-ghost !px-3 !py-1.5 text-sm"
-              aria-label="Hear the word"
+              aria-label="Hear the kanji"
             >
               🔊 Play
             </button>

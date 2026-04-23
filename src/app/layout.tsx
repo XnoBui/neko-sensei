@@ -10,7 +10,10 @@ export const metadata: Metadata = {
 const nav = [
   { href: "/", label: "Home", icon: "🏠" },
   { href: "/kana", label: "Kana", icon: "あ" },
+  { href: "/kanji", label: "Kanji", icon: "漢" },
   { href: "/vocab", label: "Vocab", icon: "📚" },
+  { href: "/grammar", label: "Grammar", icon: "文" },
+  { href: "/mock", label: "Mock", icon: "📝" },
   { href: "/chat", label: "Chat", icon: "💬" },
 ];
 

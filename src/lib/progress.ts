@@ -67,3 +67,13 @@ export function getVocabStats(): VocabStats {
 export function setVocabStats(stats: VocabStats) {
   safeSet("vocab", stats);
 }
+
+export type KanjiStats = { seen: string[]; known: string[] };
+
+export function getKanjiStats(): KanjiStats {
+  return safeGet("kanji", { seen: [], known: [] });
+}
+
+export function setKanjiStats(stats: KanjiStats) {
+  safeSet("kanji", stats);
+}
