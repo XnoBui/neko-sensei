@@ -26,11 +26,21 @@ rsync -az --delete \
 echo "▶ Installing deps + building on VPS…"
 ssh "${VPS_USER}@${VPS_IP}" "cd ${REMOTE_DIR} && npm ci --omit=dev=false && NEXT_PUBLIC_BASE_PATH=/neko-sensei npm run build"
 
-echo "▶ Restarting systemd service…"
-if ssh "${VPS_USER}@${VPS_IP}" "sudo -n systemctl restart ${SERVICE}" 2>/dev/null; then
-  echo "✓ Service restarted"
+echo "▶ Restarting service…"
+# systemd runs neko-sensei.service as user xno with Restart=always, so we can
+# drop sudo entirely: kill the running next-server process tree as xno and
+# systemd will respawn it against the fresh .next/ on disk.
+# Anchor the pattern with ^ so it matches only next-server's argv[0] and
+# never the shell cmdline that runs pkill (which starts with bash/sh).
+if ssh "${VPS_USER}@${VPS_IP}" "pgrep -u ${VPS_USER} -f '^next-server' | xargs -r kill -TERM" 2>/dev/null; then
+  sleep 3
+  if ssh "${VPS_USER}@${VPS_IP}" "pgrep -u ${VPS_USER} -f '^next-server' >/dev/null"; then
+    echo "✓ Service restarted"
+  else
+    echo "⚠ Service didn't come back up — check 'systemctl status ${SERVICE}' on the VPS."
+  fi
 else
-  echo "⚠ Passwordless sudo not set up — run this in your terminal:"
+  echo "⚠ Could not signal the running process. Fallback:"
   echo "    ssh -t ${VPS_USER}@${VPS_IP} 'sudo systemctl restart ${SERVICE}'"
 fi
 
