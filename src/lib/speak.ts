@@ -1,33 +1,22 @@
 "use client";
 
-// client-side LRU of decoded blob URLs, keyed by text.
-// repeat plays during a session are instant and cost nothing.
-const urlCache = new Map<string, string>();
-const MAX_URLS = 200;
+// iOS Safari autoplay rule: audio.play() must be called synchronously inside
+// the user-gesture handler. Any `await` between the click event and play()
+// detaches the gesture and the play is silently blocked.
+//
+// Fix: wire the Audio element's src to a real HTTP URL (the /api/tts GET
+// endpoint) and call play() synchronously. The browser streams and decodes
+// the MP3 like any other audio resource, HTTP cache handles repeats, and
+// the server keeps an in-memory LRU so repeats never refetch ElevenLabs.
 
-function urlCacheGet(key: string) {
-  const hit = urlCache.get(key);
-  if (!hit) return null;
-  urlCache.delete(key);
-  urlCache.set(key, hit);
-  return hit;
-}
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
-function urlCacheSet(key: string, value: string) {
-  if (urlCache.size >= MAX_URLS) {
-    const firstKey = urlCache.keys().next().value;
-    if (firstKey) {
-      const old = urlCache.get(firstKey);
-      if (old) URL.revokeObjectURL(old);
-      urlCache.delete(firstKey);
-    }
-  }
-  urlCache.set(key, value);
-}
-
-// if ElevenLabs has failed once (e.g. no key), stop retrying for the session
 let elevenDisabled = false;
 let currentAudio: HTMLAudioElement | null = null;
+
+function ttsUrl(text: string): string {
+  return `${BASE_PATH}/api/tts?text=${encodeURIComponent(text)}`;
+}
 
 function browserSpeak(text: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -42,40 +31,23 @@ function browserSpeak(text: string) {
   window.speechSynthesis.speak(u);
 }
 
-async function fetchTts(text: string): Promise<string | null> {
+// Warm both the server cache and the browser HTTP cache so the first tap
+// plays instantly. Safe to call on card render — skipped once we've
+// learned the endpoint is disabled (no API key).
+export async function prefetchJa(text: string) {
+  if (!text || typeof window === "undefined" || elevenDisabled) return;
   try {
-    const res = await fetch("/api/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    if (!res.ok) {
-      // 503 = no key configured. Don't retry this session.
-      if (res.status === 503) elevenDisabled = true;
-      return null;
-    }
-    const blob = await res.blob();
-    return URL.createObjectURL(blob);
+    const res = await fetch(ttsUrl(text), { cache: "force-cache" });
+    if (res.status === 503) elevenDisabled = true;
   } catch {
-    return null;
+    // network hiccup — no-op; the real tap will retry
   }
 }
 
-// Warm the cache without playing. Call this when a character is rendered so
-// the audio is already local by the time the user triggers playback.
-export async function prefetchJa(text: string) {
+export function speakJa(text: string) {
   if (!text || typeof window === "undefined") return;
-  if (elevenDisabled) return;
-  if (urlCacheGet(text)) return;
-  const url = await fetchTts(text);
-  if (url) urlCacheSet(text, url);
-}
 
-export async function speakJa(text: string) {
-  if (!text) return;
-  if (typeof window === "undefined") return;
-
-  // stop whatever is currently playing
+  // Stop any in-flight playback first
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.currentTime = 0;
@@ -88,23 +60,34 @@ export async function speakJa(text: string) {
     return;
   }
 
-  let url = urlCacheGet(text);
-  if (!url) {
-    url = await fetchTts(text);
-    if (!url) {
-      browserSpeak(text);
-      return;
-    }
-    urlCacheSet(text, url);
-  }
-
-  const audio = new Audio(url);
+  // Create + play synchronously — this is the iOS-critical path.
+  const audio = new Audio(ttsUrl(text));
   audio.playbackRate = 0.95;
+  audio.preload = "auto";
   currentAudio = audio;
-  try {
-    await audio.play();
-  } catch {
-    // autoplay blocked or decode error — fall back
-    browserSpeak(text);
+
+  audio.addEventListener(
+    "error",
+    () => {
+      const err = audio.error;
+      if (
+        err &&
+        (err.code === MediaError.MEDIA_ERR_NETWORK ||
+          err.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED)
+      ) {
+        // TTS endpoint returned JSON/error instead of MP3 — likely no API key.
+        elevenDisabled = true;
+      }
+      browserSpeak(text);
+    },
+    { once: true },
+  );
+
+  const p = audio.play();
+  if (p && typeof p.catch === "function") {
+    p.catch(() => {
+      // Rare: autoplay still refused (e.g. user hasn't interacted with page at all).
+      browserSpeak(text);
+    });
   }
 }

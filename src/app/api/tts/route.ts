@@ -29,30 +29,17 @@ function cacheSet(key: string, value: Buffer) {
   cache.set(key, value);
 }
 
-export async function POST(req: NextRequest) {
+async function handleTts({ text, voiceId }: { text: string; voiceId?: string }) {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
-    return Response.json(
-      { error: "ELEVENLABS_API_KEY is not set" },
-      { status: 503 },
-    );
+    return Response.json({ error: "ELEVENLABS_API_KEY is not set" }, { status: 503 });
   }
-
-  let body: { text?: string; voiceId?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const text = (body.text ?? "").trim();
   if (!text) return Response.json({ error: "text is required" }, { status: 400 });
-  if (text.length > 400)
-    return Response.json({ error: "text too long" }, { status: 400 });
+  if (text.length > 400) return Response.json({ error: "text too long" }, { status: 400 });
 
-  const voiceId = body.voiceId || process.env.ELEVENLABS_VOICE_ID || DEFAULT_VOICE;
+  const vid = voiceId || process.env.ELEVENLABS_VOICE_ID || DEFAULT_VOICE;
   const model = process.env.ELEVENLABS_MODEL || DEFAULT_MODEL;
-  const cacheKey = `${voiceId}:${model}:${text}`;
+  const cacheKey = `${vid}:${model}:${text}`;
 
   const cached = cacheGet(cacheKey);
   if (cached) {
@@ -66,7 +53,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Use the streaming endpoint so audio arrives as chunks (lower perceived latency).
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/stream?optimize_streaming_latency=3`;
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(vid)}/stream?optimize_streaming_latency=3`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -104,4 +91,25 @@ export async function POST(req: NextRequest) {
       "X-Cache": "MISS",
     },
   });
+}
+
+// GET lets the client use the URL directly as an <audio> / Audio() src, so
+// playback can start synchronously inside a user gesture. iOS Safari blocks
+// audio that comes from an awaited fetch/blob flow.
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url);
+  const text = (url.searchParams.get("text") ?? "").trim();
+  const voiceId = url.searchParams.get("voiceId") ?? undefined;
+  return handleTts({ text, voiceId });
+}
+
+export async function POST(req: NextRequest) {
+  let body: { text?: string; voiceId?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const text = (body.text ?? "").trim();
+  return handleTts({ text, voiceId: body.voiceId });
 }
