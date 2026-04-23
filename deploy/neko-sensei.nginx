@@ -1,10 +1,16 @@
 # ── Neko Sensei — nginx location blocks ──
-# Paste inside the server {} block of /etc/nginx/sites-enabled/default-server
-# App runs at /neko-sensei/ on the shared VPS (89.167.23.147).
+# Paste inside the server {} block of /etc/nginx/sites-enabled/default-server.
+# App runs at /neko-sensei on the shared VPS (89.167.23.147).
+#
+# Pattern mirrors mangakai: Next.js is configured with basePath=/neko-sensei,
+# so nginx just forwards the full request URI to 127.0.0.1:3500. A bare
+# `location /neko-sensei` (prefix match) covers both `/neko-sensei` and
+# `/neko-sensei/…` without needing a 301 redirect that would fight Next's
+# default `trailingSlash: false`.
 
-# API → Node.js (streams, longer timeout for Claude calls)
+# --- Neko Sensei API (Claude chat — longer timeout, streaming-friendly) ---
 location /neko-sensei/api/ {
-    proxy_pass http://127.0.0.1:3500/neko-sensei/api/;
+    proxy_pass http://127.0.0.1:3500;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -14,16 +20,12 @@ location /neko-sensei/api/ {
     proxy_buffering off;
 }
 
-# App (static + SSR)
-location /neko-sensei/ {
-    proxy_pass http://127.0.0.1:3500/neko-sensei/;
+# --- Neko Sensei app (static + SSR) ---
+location /neko-sensei {
+    proxy_pass http://127.0.0.1:3500;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-}
-
-location = /neko-sensei {
-    return 301 /neko-sensei/;
 }
