@@ -55,27 +55,32 @@ export default function ChatPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-bold text-sakura-700">AI Chat with Neko Sensei</h1>
-        <p className="text-sm text-sakura-900/70 mt-1">
-          Practice simple Japanese. Neko Sensei replies with Japanese, romaji, and English.
+        <h1 className="ios-title text-ios-label">AI Chat</h1>
+        <p className="text-sm text-ios-label3 mt-1">
+          Practice with Neko Sensei. Replies include Japanese, romaji, and English.
         </p>
       </div>
 
       <div className="card !p-0 overflow-hidden">
-        <div className="h-[55vh] overflow-y-auto p-4 space-y-3 bg-sakura-50/40">
+        <div className="h-[58vh] overflow-y-auto p-4 space-y-3">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 whitespace-pre-wrap leading-relaxed ${
+                className={`max-w-[80%] rounded-iosLg px-4 py-3 whitespace-pre-wrap leading-relaxed text-[15px] ${
                   m.role === "user"
-                    ? "bg-sakura-500 text-white rounded-br-sm"
-                    : "bg-white border border-sakura-100 rounded-bl-sm"
+                    ? "text-white rounded-br-md"
+                    : "bg-white/80 border border-ios-strokeSoft text-ios-label rounded-bl-md backdrop-blur"
                 }`}
+                style={
+                  m.role === "user"
+                    ? { background: "linear-gradient(180deg,#0a84ff 0%,#0064d8 100%)" }
+                    : undefined
+                }
               >
                 {m.role === "assistant" && (
                   <button
                     onClick={() => speakMsg(m.content)}
-                    className="float-right ml-2 text-xs text-sakura-600 hover:underline"
+                    className="float-right ml-2 text-xs text-ios-blue hover:underline"
                     aria-label="Hear message"
                   >
                     🔊
@@ -87,7 +92,7 @@ export default function ChatPage() {
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="bg-white border border-sakura-100 rounded-2xl rounded-bl-sm px-4 py-3 text-sakura-900/60">
+              <div className="bg-white/80 border border-ios-strokeSoft rounded-iosLg rounded-bl-md px-4 py-3 text-ios-label3 backdrop-blur">
                 Neko Sensei is thinking… にゃ〜
               </div>
             </div>
@@ -95,13 +100,13 @@ export default function ChatPage() {
           <div ref={endRef} />
         </div>
 
-        <div className="border-t border-sakura-100 p-3 flex gap-2 bg-white">
+        <div className="border-t border-ios-strokeSoft p-3 flex gap-2 bg-white/60 backdrop-blur">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
             placeholder="Type in Japanese or English…"
-            className="flex-1 rounded-full border border-sakura-200 px-4 py-2 outline-none focus:border-sakura-500"
+            className="flex-1 rounded-full bg-white/80 border border-ios-stroke px-4 py-2.5 outline-none focus:border-ios-blue focus:ring-2 focus:ring-ios-blue/20 placeholder:text-ios-label3"
             disabled={loading}
           />
           <button onClick={send} disabled={loading || !input.trim()} className="btn-primary disabled:opacity-50">
@@ -111,10 +116,11 @@ export default function ChatPage() {
       </div>
 
       {error && (
-        <div className="card bg-sakura-50 border-sakura-300 text-sakura-800 text-sm">
-          <strong>Error:</strong> {error}
-          <div className="mt-1 text-sakura-700/80">
-            Make sure <code>ANTHROPIC_API_KEY</code> is set in <code>.env.local</code>.
+        <div className="card border-ios-red/40 text-sm">
+          <strong className="text-ios-red">Error: </strong>
+          <span className="text-ios-label2">{error}</span>
+          <div className="mt-1 text-ios-label3">
+            Make sure <code className="bg-ios-fill px-1 py-0.5 rounded">ANTHROPIC_API_KEY</code> is set in <code className="bg-ios-fill px-1 py-0.5 rounded">.env.local</code>.
           </div>
         </div>
       )}

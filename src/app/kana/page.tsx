@@ -64,33 +64,36 @@ export default function KanaPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-3xl font-bold text-sakura-700">Kana Drill</h1>
-        <div className="flex gap-1 bg-white rounded-full p-1 border border-sakura-200">
+        <h1 className="ios-title text-ios-label">Kana Drill</h1>
+        <div className="segmented">
           {(["hiragana", "katakana"] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setSet(s)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
-                set === s ? "bg-sakura-500 text-white" : "text-sakura-700 hover:bg-sakura-50"
-              }`}
-            >
+            <button key={s} data-active={set === s} onClick={() => setSet(s)}>
               {s === "hiragana" ? "ひらがな" : "カタカナ"}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 text-center text-sm">
-        <div className="card !p-3"><div className="text-2xl font-bold text-matcha-600">{stats.correct}</div><div className="text-sakura-900/70">Correct</div></div>
-        <div className="card !p-3"><div className="text-2xl font-bold text-sakura-600">{accuracy}%</div><div className="text-sakura-900/70">Accuracy</div></div>
-        <div className="card !p-3"><div className="text-2xl font-bold text-sakura-600">🔥 {stats.streak}</div><div className="text-sakura-900/70">Streak (best {stats.best})</div></div>
+      <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="card !p-4">
+          <div className="text-2xl font-semibold text-ios-green">{stats.correct}</div>
+          <div className="text-xs text-ios-label3 mt-0.5">Correct</div>
+        </div>
+        <div className="card !p-4">
+          <div className="text-2xl font-semibold text-ios-blue">{accuracy}%</div>
+          <div className="text-xs text-ios-label3 mt-0.5">Accuracy</div>
+        </div>
+        <div className="card !p-4">
+          <div className="text-2xl font-semibold text-ios-orange">🔥 {stats.streak}</div>
+          <div className="text-xs text-ios-label3 mt-0.5">Streak · best {stats.best}</div>
+        </div>
       </div>
 
-      <div className="card flex flex-col items-center gap-6 py-10">
+      <div className="card flex flex-col items-center gap-7 py-12">
         <button
           onClick={() => speakJa(current.kana)}
           title="Hear it"
-          className="jp-big text-sakura-700 hover:scale-110 transition"
+          className="jp-big text-ios-label hover:scale-105 transition-transform"
         >
           {current.kana}
         </button>
@@ -98,17 +101,16 @@ export default function KanaPage() {
           {choices.map((c) => {
             const isCorrect = c === current.romaji;
             const picked = answered === c;
-            const showColor =
-              answered && (isCorrect ? "bg-matcha-500 text-white border-matcha-600" : picked ? "bg-sakura-400 text-white border-sakura-500" : "");
+            const base =
+              "rounded-iosLg py-3.5 font-semibold text-lg transition border backdrop-blur";
+            let state = "bg-white/70 border-ios-stroke text-ios-label hover:bg-white";
+            if (answered) {
+              if (isCorrect) state = "bg-ios-green text-white border-transparent";
+              else if (picked) state = "bg-ios-red text-white border-transparent";
+              else state = "bg-white/50 border-ios-strokeSoft text-ios-label3";
+            }
             return (
-              <button
-                key={c}
-                onClick={() => pick(c)}
-                disabled={!!answered}
-                className={`rounded-xl border border-sakura-200 py-3 font-bold text-lg transition ${
-                  showColor || "bg-white hover:bg-sakura-50 text-sakura-800"
-                }`}
-              >
+              <button key={c} onClick={() => pick(c)} disabled={!!answered} className={`${base} ${state}`}>
                 {c}
               </button>
             );

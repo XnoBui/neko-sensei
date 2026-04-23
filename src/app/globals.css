@@ -3,27 +3,112 @@
 @tailwind utilities;
 
 :root {
-  --bg: #fff5f7;
-  --fg: #2a1620;
+  --ios-bg: #f2f2f7;
+  --ios-bg-tint-a: #e9f0ff;
+  --ios-bg-tint-b: #fde6f2;
+  --ios-bg-tint-c: #e5f9ec;
 }
 
 html, body {
-  background: var(--bg);
-  color: var(--fg);
+  background: var(--ios-bg);
+  color: #1c1c1e;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Helvetica Neue", Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.01em;
+}
+
+body {
+  background-image:
+    radial-gradient(60rem 40rem at 10% -10%, var(--ios-bg-tint-a) 0%, transparent 60%),
+    radial-gradient(50rem 40rem at 110% 10%, var(--ios-bg-tint-b) 0%, transparent 55%),
+    radial-gradient(50rem 40rem at 50% 110%, var(--ios-bg-tint-c) 0%, transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Liquid Glass surface */
+.glass {
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.75) inset,
+    0 -1px 0 rgba(15, 15, 30, 0.04) inset,
+    0 8px 28px -12px rgba(15, 15, 30, 0.18);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(200%) blur(28px);
+  -webkit-backdrop-filter: saturate(200%) blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .card {
-  @apply bg-white rounded-2xl shadow-md border border-sakura-100 p-6;
+  @apply rounded-iosLg p-5 glass;
 }
+
+/* Buttons — iOS pill style */
 .btn {
-  @apply inline-flex items-center justify-center rounded-full px-5 py-2.5 font-semibold transition;
+  @apply inline-flex items-center justify-center rounded-full px-5 py-2.5 font-semibold transition select-none;
+  letter-spacing: -0.01em;
 }
 .btn-primary {
-  @apply btn bg-sakura-500 text-white hover:bg-sakura-600 shadow-md;
+  @apply btn text-white;
+  background: linear-gradient(180deg, #0a84ff 0%, #0064d8 100%);
+  box-shadow: 0 6px 18px -6px rgba(10, 132, 255, 0.55),
+              0 1px 0 rgba(255,255,255,0.35) inset;
 }
+.btn-primary:hover { filter: brightness(1.04); }
+.btn-primary:active { transform: translateY(1px); }
+
 .btn-ghost {
-  @apply btn bg-white text-sakura-700 border border-sakura-200 hover:bg-sakura-50;
+  @apply btn text-ios-label;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(60,60,67,0.12);
+  backdrop-filter: blur(14px);
 }
+.btn-ghost:hover { background: rgba(255,255,255,0.9); }
+
 .jp-big {
-  @apply font-jp text-7xl md:text-8xl font-bold;
+  @apply font-jp text-7xl md:text-8xl font-semibold;
+  letter-spacing: -0.02em;
+}
+
+/* Segmented control */
+.segmented {
+  @apply inline-flex p-1 rounded-full;
+  background: rgba(120,120,128,0.14);
+  backdrop-filter: blur(10px);
+}
+.segmented button {
+  @apply px-4 py-1.5 rounded-full text-sm font-semibold transition;
+  color: #3c3c43;
+}
+.segmented button[data-active="true"] {
+  background: #ffffff;
+  color: #1c1c1e;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px -2px rgba(0,0,0,0.08);
+}
+
+/* Chips */
+.chip {
+  @apply inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(60,60,67,0.12);
+  color: #1c1c1e;
+  backdrop-filter: blur(12px);
+}
+.chip[data-active="true"] {
+  background: #1c1c1e;
+  color: #fff;
+  border-color: transparent;
+}
+
+/* Large iOS title */
+.ios-title {
+  @apply text-4xl md:text-5xl font-bold tracking-tight;
+  letter-spacing: -0.025em;
 }

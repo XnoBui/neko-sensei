@@ -47,23 +47,15 @@ export default function VocabPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-3xl font-bold text-sakura-700">Vocab Flashcards</h1>
-        <div className="text-sm text-sakura-900/70">
-          {stats.known.length} / {vocab.length} known
+        <h1 className="ios-title text-ios-label">Vocab Flashcards</h1>
+        <div className="text-sm text-ios-label3">
+          <span className="font-semibold text-ios-label">{stats.known.length}</span> / {vocab.length} known
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
         {categories.map((c) => (
-          <button
-            key={c}
-            onClick={() => setCategory(c)}
-            className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition ${
-              category === c
-                ? "bg-sakura-500 text-white border-sakura-500"
-                : "bg-white text-sakura-700 border-sakura-200 hover:bg-sakura-50"
-            }`}
-          >
+          <button key={c} data-active={category === c} onClick={() => setCategory(c)} className="chip capitalize">
             {c}
           </button>
         ))}
@@ -71,18 +63,18 @@ export default function VocabPage() {
 
       <div
         onClick={() => setFlipped((f) => !f)}
-        className="card relative cursor-pointer select-none min-h-[280px] flex flex-col items-center justify-center text-center py-10"
+        className="card relative cursor-pointer select-none min-h-[300px] flex flex-col items-center justify-center text-center py-10"
       >
         {!flipped ? (
           <>
-            <div className="jp-big text-sakura-700">{card.word}</div>
-            <p className="mt-4 text-sakura-900/60 text-sm">Tap to reveal meaning</p>
+            <div className="jp-big text-ios-label">{card.word}</div>
+            <p className="mt-5 text-ios-label3 text-sm">Tap to reveal meaning</p>
           </>
         ) : (
           <>
-            <div className="text-2xl font-bold text-sakura-700 mb-2">{card.meaning}</div>
-            <div className="font-jp text-3xl text-sakura-900">{card.word}</div>
-            <div className="text-sakura-900/60 mt-1">{card.reading}</div>
+            <div className="text-2xl font-semibold tracking-tight text-ios-label mb-2">{card.meaning}</div>
+            <div className="font-jp text-3xl text-ios-label">{card.word}</div>
+            <div className="text-ios-label3 mt-1 text-sm">{card.reading}</div>
           </>
         )}
         <button
