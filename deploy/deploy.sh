@@ -24,7 +24,10 @@ rsync -az --delete \
   ./ "${VPS_USER}@${VPS_IP}:${REMOTE_DIR}/"
 
 echo "▶ Installing deps + building on VPS…"
-ssh "${VPS_USER}@${VPS_IP}" "cd ${REMOTE_DIR} && npm ci --omit=dev=false && NEXT_PUBLIC_BASE_PATH=/neko-sensei npm run build"
+# `npm ci` installs devDependencies by default — next/tailwind/postcss live
+# there, so they're needed for `npm run build`. The old --omit=dev=false
+# flag was invalid syntax (npm warned but ignored it).
+ssh "${VPS_USER}@${VPS_IP}" "cd ${REMOTE_DIR} && npm ci && NEXT_PUBLIC_BASE_PATH=/neko-sensei npm run build"
 
 echo "▶ Restarting service…"
 # systemd runs neko-sensei.service as user xno with Restart=always, so we can
