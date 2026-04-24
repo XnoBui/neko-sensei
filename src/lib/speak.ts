@@ -4,10 +4,13 @@
 // the user-gesture handler. Any `await` between the click event and play()
 // detaches the gesture and the play is silently blocked.
 //
-// Fix: wire the Audio element's src to a real HTTP URL (the /api/tts GET
-// endpoint) and call play() synchronously. The browser streams and decodes
-// the MP3 like any other audio resource, HTTP cache handles repeats, and
-// the server keeps an in-memory LRU so repeats never refetch ElevenLabs.
+// Fix: wire the Audio element's src to a real HTTP URL (pregenerated static
+// MP3 when we have one, /api/tts GET endpoint otherwise) and call play()
+// synchronously. The browser streams and decodes the MP3 like any other
+// audio resource; static files are served from the CDN edge, and the API
+// route keeps an in-memory LRU so repeats never refetch ElevenLabs.
+
+import { ttsManifest } from "./tts-manifest";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
@@ -18,7 +21,12 @@ let currentAudio: HTMLAudioElement | null = null;
 // so a slow error event can't trigger browserSpeak over a newer audio.
 let speakGen = 0;
 
+// Prefer a pregenerated static MP3 (free to serve, works with no API key).
+// Falls back to the dynamic /api/tts endpoint for anything not in the
+// manifest — e.g. chat replies from the model.
 function ttsUrl(text: string): string {
+  const hash = ttsManifest[text];
+  if (hash) return `${BASE_PATH}/tts/${hash}.mp3`;
   return `${BASE_PATH}/api/tts?text=${encodeURIComponent(text)}`;
 }
 

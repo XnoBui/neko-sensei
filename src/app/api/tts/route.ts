@@ -1,11 +1,7 @@
 import { NextRequest } from "next/server";
+import { DEFAULT_VOICE, DEFAULT_MODEL, VOICE_SETTINGS } from "@/lib/tts-config";
 
 export const runtime = "nodejs";
-
-// Native Japanese voice "Kana" from the shared library — best fit for a kana-drill app.
-const DEFAULT_VOICE = "dhGvgIx0X6G3xzSWqOye";
-// Flash v2.5: ~75ms generation, warms under 500ms end-to-end. Japanese supported.
-const DEFAULT_MODEL = "eleven_flash_v2_5";
 
 // simple in-memory cache so repeat drills don't re-hit the API.
 // key = `${voice}:${model}:${text}`; value = MP3 bytes.
@@ -64,12 +60,7 @@ async function handleTts({ text, voiceId }: { text: string; voiceId?: string }) 
     body: JSON.stringify({
       text,
       model_id: model,
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.75,
-        style: 0.0,
-        use_speaker_boost: true,
-      },
+      voice_settings: VOICE_SETTINGS,
     }),
   });
 
